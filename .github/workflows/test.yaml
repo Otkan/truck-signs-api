@@ -40,6 +40,8 @@ jobs:
         needs: lint
         env:
             MODE: dev
+            DEBUG_ENABLED: "True"
+            SECRET_KEY: test-secret-key-for-github-actions-only
         steps:
             - uses: actions/checkout@v5
             - name: Set up Python 3.12
