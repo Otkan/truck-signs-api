@@ -40,7 +40,7 @@ The store also allows clients to upload their own designs and to customize them 
 
 1. Clone the repo:
 ```bash
-git clone git@github.com:Developer-Akademie-DevSecOpsKurs/truck-signs-api.git
+git clone git@github.com:Otkan/truck-signs-api.git
 cd truck-signs-api
 ```
 
@@ -49,36 +49,67 @@ cd truck-signs-api
 cp example.env .env
 ```
 
-3. Create virtual environment:
+3. Generate a Django secret key:
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Copy the generated key into your `.env` file:
+
+```env
+SECRET_KEY=<YOUR_SECRET_KEY>
+```
+
+4. Create virtual environment:
 ```bash
 python -m venv <venv_name>
 ```
 
-4. Activate virtual environment:
+5. Activate virtual environment:
 ```bash
 source <venv_name>/scripts/activate
 ```
 
-5. Install requirements:
+6. Install requirements:
 ```bash
 pip install -r requirements.txt
 ```
 
-6. Migrate database:
+7. Migrate database:
 ```bash
 python src/manage.py makemigrations
 python src/manage.py migrate
 ```
 
-7. Collect static files:
+8. Collect static files:
 ```bash
 python src/manage.py collectstatic
 ```
 
-8. Start the Python Development Server:
+9. Start the Python Development Server:
 ```bash
 python src/manage.py runserver
 ```
+
+### Run with Docker
+
+Build the Docker image:
+
+```bash
+docker build -t truck-signs-api:local .
+```
+
+Start the application stack:
+
+```bash
+docker compose up
+```
+
+The backend will be available at:
+
+- http://localhost:8020/
+- http://localhost:8020/admin/
 
 ## Usage
 
@@ -97,6 +128,30 @@ control to avoid leaking secrets.
 **Database switch via MODE**
 - `MODE=prod` -> PostgreSQL, using `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` from `.env`.
 - `MODE` unset or `MODE=dev` -> SQLite at `src/db.sqlite3`; no DB env vars needed.
+
+### Docker Configuration
+
+For Docker deployments use:
+
+```env
+MODE=prod
+DEBUG_ENABLED=False
+DB_HOST=db
+```
+
+For local development use:
+
+```env
+MODE=dev
+DEBUG_ENABLED=True
+```
+
+The Docker setup automatically:
+
+- waits for PostgreSQL
+- runs database migrations
+- collects static files
+- creates the configured superuser if it does not already exist
 
 ### Models
 
@@ -140,14 +195,22 @@ The behavior of some of the views had to be modified to address functionalities 
         EMAIL_HOST_USER
         EMAIL_HOST_PASSWORD
         ```
-    3. For the `postgres` database, the default configuration should be:
-        ```bash
-        DB_NAME=trucksigns_db
-        DB_USER=trucksigns_user
-        DB_PASSWORD=supertrucksignsuser!
-        DB_HOST=localhost
-        DB_PORT=5432
-        ```
+    3. For Docker deployments:
+
+```env
+MODE=prod
+DEBUG_ENABLED=False
+
+DB_NAME=trucksigns_db
+DB_USER=trucksigns_user
+DB_PASSWORD=<YOUR_DB_PASSWORD>
+DB_HOST=db
+DB_PORT=5432
+
+POSTGRES_DB=trucksigns_db
+POSTGRES_USER=trucksigns_user
+POSTGRES_PASSWORD=<YOUR_DB_PASSWORD>
+```
     4. The SECRET_KEY is the django secret key. To generate a new one see: [Stackoverflow Link](https://stackoverflow.com/questions/41298963/is-there-a-function-for-generating-settings-secret-key-in-django)
 
     5. The `EMAIL_HOST_USER` and the `EMAIL_HOST_PASSWORD` are the credentials to send emails from the website when a client makes a purchase. This is currently disable, but the code to activate this can be found in views.py in the create order view as comments. Therefore, any valid email and password will work.
@@ -207,6 +270,20 @@ Congratulations =) !!! The App should be running in [localhost:8000](http://loca
 
 </div>
 
+## Security
+
+The application is configured through environment variables.
+
+Security recommendations:
+
+- Never commit `.env`.
+- Never commit passwords or API keys.
+- Always use a strong random `SECRET_KEY`.
+- Keep `DEBUG_ENABLED=False` in production.
+- Restrict `ALLOWED_HOSTS` to the required hosts only.
+- Store sensitive values only in environment variables.
+- The PostgreSQL database runs inside the Docker network and is not exposed publicly.
+
 ## Additional Information
 
 ### Postgresql Database
@@ -214,6 +291,44 @@ Congratulations =) !!! The App should be running in [localhost:8000](http://loca
 - Setup Database: [Digital Ocean Link for Django Deployment on VPS](https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-16-04)
 
 ### Docker
+
+Build the Docker image:
+
+```bash
+docker build -t truck-signs-api:local .
+```
+
+Run the application without Docker Compose:
+
+```bash
+docker run \
+  -p 8020:8000 \
+  -e MODE=prod \
+  -e DEBUG_ENABLED=False \
+  -e SECRET_KEY=<YOUR_SECRET_KEY> \
+  -e DB_NAME=<DB_NAME> \
+  -e DB_USER=<DB_USER> \
+  -e DB_PASSWORD=<DB_PASSWORD> \
+  -e DB_HOST=<DB_HOST> \
+  -e DB_PORT=<DB_PORT> \
+  -e ALLOWED_HOSTS=<ALLOWED_HOSTS> \
+  truck-signs-api:local
+```
+
+> **Note:** The `docker run` example assumes that a PostgreSQL database is already running and reachable via the 
+> configured `DB_HOST`. For local development, `docker compose up` is the recommended way to start both the backend and the database.
+
+Start the application:
+
+```bash
+docker compose up
+```
+
+Stop the application:
+
+```bash
+docker compose down
+```
 
 - [Docker Oficial Documentation](https://docs.docker.com/)
 - Dockerizing Django, PostgreSQL, guinicorn, and Nginx:

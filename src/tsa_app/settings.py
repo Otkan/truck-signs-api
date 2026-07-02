@@ -33,14 +33,11 @@ if not has_env_vars_configuration:
 # adjust django settings depending on environment configuration
 LOG_LEVEL = os.getenv("LOG_LEVEL", "ERROR")
 
-MODE = os.getenv("MODE")
+MODE = os.getenv("MODE", "prod").lower()
 DEBUG = os.getenv("DEBUG_ENABLED", "False") == "True"
 
-if DEBUG is True and MODE != "":
-    logger.info("could not detect MODE variable, setting to 'dev'")
-    MODE = "dev"
-elif not MODE or MODE == "":
-    logger.info("could not detect MODE variable, setting to 'prod'")
+if MODE not in ["dev", "prod"]:
+    logger.warning("invalid MODE value '%s', falling back to 'prod'", MODE)
     MODE = "prod"
 
 if MODE == "prod":
@@ -54,7 +51,10 @@ else:
     LOG_LEVEL = "DEBUG"
     logger.setLevel(level=LOG_LEVEL)
 
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-change-me-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -111,7 +111,7 @@ pg_config = {
     "ENGINE": db_engine,
     "NAME": os.getenv("DB_NAME", "trucksigns_db"),
     "USER": os.getenv("DB_USER", "trucksigns_user"),
-    "PASSWORD": os.getenv("DB_PASSWORD", "supertrucksignsuser!"),
+    "PASSWORD": os.getenv("DB_PASSWORD"),
     "HOST": os.getenv("DB_HOST", "localhost"),
     "PORT": os.getenv("DB_PORT", "5432"),
 }
