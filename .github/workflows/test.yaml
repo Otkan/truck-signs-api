@@ -41,7 +41,7 @@ jobs:
         env:
             MODE: dev
             DEBUG_ENABLED: "True"
-            SECRET_KEY: test-secret-key-for-github-actions-only
+            SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         steps:
             - uses: actions/checkout@v5
             - name: Set up Python 3.12
