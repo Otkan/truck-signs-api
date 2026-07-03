@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: tsa_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -18,6 +19,7 @@ services:
 
   backend:
     image: truck-signs-api:local
+    container_name: tsa_backend
     restart: unless-stopped
     env_file:
       - .env
